@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    volumes:
+      - ./app:/app
+      - ./cache:/cache
+      - ./data:/data
+      - ./age:/age
+    ports:
+      - "80:80"
