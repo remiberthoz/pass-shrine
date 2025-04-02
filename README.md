@@ -2,45 +2,38 @@
 
 A tiny web server to access your password-store on the web, with privacy.
 
-## :warning: Disclaimer
+----
 
-This tool **deals with encrypted passwords only** and does not perform cryptographic operations on passwords. However, I am **not a security or cryptography expert** — use at your own risk!
+[`pass`](https://www.passwordstore.org/) and [`passage`](https://github.com/FiloSottile/passage) use asymmetric encryption to store passwords securely on the filesystem. Each password is encrypted individually, enabling decryption of single entries upon request without exposing an entire vault — especially when the decryption is performed by a smartcard (*e.g.*, YubiKey).
 
-**:construction: Development is ongoing.**
-To be fully functional, pass-shrine should be used with a companion app, such as a browser extension, a mobile app, or a WebUSB tool — none of which exist yet.
+This structure allows users to store *e.g.* work-related and personal passwords in the same password-store, and sync the password store on work computers. Personal passwords will never be decrypted on that computer — and cannot be. However, one significant drawback exists: **entry names in the password-store are not encrypted**, and they often correspond to service names. This means an observer (*e.g.*, company IT) can see the name of stored entries, thus guess existence of accounts for other services (*e.g.*, competitor company).
 
-## :dart: Who is this for?
+Tools like [`pass-tomb`](https://github.com/roddhjav/pass-tomb) and [`pass-grave`](https://github.com/8go/pass-grave) mitigate this issue by encrypting the entire password-store in a locked container. However, this protection only applies when the container is locked — when unlocked, entry names are still exposed.
 
-pass-shrine is designed for users of [pass](https://www.passwordstore.org/) or [passage](https://github.com/FiloSottile/passage) who:
+----
 
-- Encrypt all passwords with a private key stored on a hardware token (*e.g.*, a YubiKey).
-- Have access to a web server hosted on a trusted solution.
-- **Need to retrieve a *specific* password** from the internet, on a moderately trusted computer (*e.g.*, retrieve a library account password on a university computer).
-- **Want to avoid exposing metadata of their password store** in such scenarios (*i.e.*, the filenames of password entries, which often correspond to service names).
+### Introducing `pass-shrine`
 
-### The filename leakage issue with pass and passage
+`pass-shrine` addresses this issue by moving the password-store to a cloud server that **never reveals entry names**. Instead, the server has to be queried for entries. **Any query will return encrypted content**, whether real or fake:
 
-One drawback of pass and passage is that filenames are not encrypted, revealing which services you have accounts with. This is fine for local use but problematic when exposed over the web.
+- If the requested entry exists, the server returns its real encrypted content.
+- If the requested entry does not exist, the server generated and encrypts fake content that is indistinguishable from real content.
 
-**:shield: pass-shrine mitigates this by obfuscating the list of stored entries**, making it impossible for attackers to determine whether a queried entry exists or not.
+Since any query returns valid-looking encrypted content, attackers cannot query and use the response to determine whether an entry exists.
+Passive observers can still monitor queries, but presumably only entries that are OK to expose will be queried (*e.g.* company password on company computer).
 
-### The security advantage of pass and passage
+**Security model**:
 
-Unlike vault-based password managers, pass and passage **encrypt passwords individually**, which provides security benefits:
+- Decryption always occurs locally and should be performed by a smartcard — the server never handles private keys, the private key should not be exposed to computers.
+- **Distinguishing real from fake entries requires the private key**. Decryption of fake entries will either:
+  - contain an indication that the entry was generated, if the key used by the server to encrypt fake generated content is the same key that is used by the real password-store *(not recommanded)*,
+  - fail otherwise (*recommanded*, to share even less information with the server).
 
-- If you need to use a specific password (*e.g.*, for your library account) on an moderately trusted computer (*e.g.*, a university computer), unlocking a traditional vault-based manager could expose all your stored credentials.
-- With pass and passage, only the requested password is decrypted and exposed. Given you would have typed the password if you knew it, decrypting it does not expose more information.
-- If a hardware token is used for decryption, the key remains protected and is not exposed to the untrusted computer.
+**Disclaimer:** `pass-shrine` deals with encrypted passwords only and does not perform cryptographic operations on passwords. However, I am not a security or cryptography expert — use at your own risk!
 
-## :shield: How pass-shrine works
+**Why not simpler?** Like a web-server behind OTP auth? For fun! Yes, you could use HOTP with the YubiKey to authenticate queries.
 
-pass-shrine is a tiny web server that serves encrypted password entries. It operates as follows:
-
-- When you query a password, pass-shrine replies with the encrypted file for that entry.
-- If the password does not exist, pass-shrine generates and returns an encrypted file indistinguishable from a real one.
-- Attackers cannot determine which accounts exist, as every query returns a valid-looking response.
-
-Decryption has to happen **locally by a hardware token**. All security benefit is lost otherwise.
+----
 
 ## :rocket: Getting started
 
@@ -48,12 +41,12 @@ Decryption has to happen **locally by a hardware token**. All security benefit i
 
 In addition to the `./app` directory (which contains the server code), pass-shrine requires three additional directories:
 
-- `./data` → Your password store (can symlink to `~/.password-store` or `~/.passage/store`).
+- `./data` → Your password-store (can symlink to `~/.password-store` or `~/.passage/store`).
 - `./age` → Contains a file named `server-identity.age`, that you should generate with `age-keygen`.
 - `./cache` → Stores generated fake encrypted files to ensure consistent responses for non-existing entries.
 
-**Important notes on the identity file:**
-The `server-identity.age` identity file is used to generate fake encrypted files to prevent attackers from identifying existing and non-existing store entries. This identity must *not* be the same as the identity used to encrypt real password entries: you do not have to share secret information with pass-shrine.
+**Note on the identity file:**
+The `server-identity.age` identity file is used to generate fake encrypted content preventing attackers from determining whether an entry exists. This identity must *not* be the same as the identity used to encrypt real password entries: you do not have to share the public key with `pass-shrine`.
 
 ### Running pass-shrine
 
@@ -84,7 +77,7 @@ Contributions and feedback are welcome! Feel free to open issues or submit pull 
 **To-do list:**
 
 - GPG support for pass users (implementation must use `--hidden-recipient`).
-- Better handling of `server-identity.age` as no private keys are required by the server.
+- Better handling of `server-identity.age`, no private keys are required by the server.
 - Simplification of the web server (Flask is used for now, but alternatives like a simple bash CGI could be explored).
 - Basic security measures (authentication, rate-limiting, cache size handling).
 
