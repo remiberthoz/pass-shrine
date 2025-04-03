@@ -9,9 +9,6 @@ FIELD = "requested_password"
 CACHE_PATH = Path("/cache")
 DATA_PATH = Path("/data")
 
-def requested_password_to_cache_stem(requested_password):
-    return hashlib.md5(requested_password.encode("utf-8")).hexdigest()
-
 def query_data_in_directory(password_directory, password_name):
     # Same trick as: https://gist.github.com/kousu/bf5610187b608d79d415b1436091ab2d
     sanitized_name = Path("/", password_name).resolve().relative_to("/")
@@ -29,13 +26,13 @@ def query_or_generate_data(password_name):
     if password_data is not None:
         return password_data
 
-    requested_password_h = requested_password_to_cache_stem(password_name)
-    password_data = query_data_in_directory(CACHE_PATH, requested_password_h)
+    password_name_h = hashlib.md5(password_name.encode("utf-8")).hexdigest()
+    password_data = query_data_in_directory(CACHE_PATH, password_name_h)
     if password_data is not None:
         return password_data
 
-    password_length = 6 + (int.from_bytes(requested_password_h.encode("utf-8")) % 12)
-    password = requested_password_h[:password_length]
+    password_length = 6 + (int.from_bytes(password_name_h.encode("utf-8")) % 12)
+    password = password_name_h[:password_length]
     password_entry = f"||not_in_passwordstore|| {password}\nlogin: alfonse@courrier.net\nurl: example.com"
 
     p = Popen(["age", "-e", "-a", "-i", "/age/server-identity.age"], stdout=PIPE, stdin=PIPE, stderr=PIPE, text=True)
@@ -43,7 +40,7 @@ def query_or_generate_data(password_name):
     if stderr:
         return None
     password_data = stdout
-    password_path = CACHE_PATH / f"{requested_password_h}.age"
+    password_path = CACHE_PATH / f"{password_name_h}.age"
     with open(password_path, "w") as foo:
         foo.write(password_data)
 
