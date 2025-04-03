@@ -15,16 +15,6 @@ def html_response(requested_password, password_data):
 def requested_password_to_cache_stem(requested_password):
     return hashlib.md5(requested_password.encode("utf-8")).hexdigest()
 
-def output_if_in_dir(search_path, requested_password, requested_password_h):
-    file_stem = requested_password if requested_password_h is None else requested_password_h
-    paths = list(search_path.glob("**/*"))
-    stems = [p.stem for p in paths]
-    if file_stem in stems:
-        idx = stems.index(file_stem)
-        password_path = paths[idx]
-        with open(password_path, "r") as foo:
-            password_data = foo.read()
-
 def query_data_in_directory(password_directory, password_name):
     # Same trick as: https://gist.github.com/kousu/bf5610187b608d79d415b1436091ab2d
     sanitized_name = Path("/", password_name).resolve().relative_to("/")
