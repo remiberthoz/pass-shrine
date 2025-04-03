@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, request, render_template
 from pathlib import Path
 import hashlib
 from subprocess import Popen, PIPE, STDOUT
@@ -10,31 +10,7 @@ CACHE_PATH = Path("/cache")
 DATA_PATH = Path("/data")
 
 def formulate_output(requested_password, password_data):
-    output = render_template_string("""
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="utf-8">
-            <title>Pass-shrine</title>
-            <link rel=icon href="{{ url_for('static', filename="favicon.ico") }}" type="image/vnd.microsoft.icon" sizes="16x16 24x24 32x32 128x128 256x256">
-        </head>
-        <body>
-            <h1>Welcome to my pass-shrine!</h1>
-            <form method="post">
-                <label for="{{ field }}">Password name: </label>
-                <input name="{{field }}" id="{{ field }}" placeholder="Password to query...">
-                <input type="submit" value="Query" >
-            </form>
-            {%- if password_data -%}
-            <br>
-            <div>
-                <p>Requested password: <code>{{ requested_password }}</code></p>
-                <pre>{{ password_data }}</pre>
-            </div>
-            {%- endif -%}
-        </body>
-        </html>
-        """, field=FIELD, requested_password=requested_password, password_data=password_data)
+    output = render_template("index.html", field=FIELD, requested_password=requested_password, password_data=password_data)
     return "\n".join((l.strip() for l in output.split("\n")))
 
 def requested_password_to_cache_stem(requested_password):
