@@ -9,9 +9,8 @@ FIELD = "requested_password"
 CACHE_PATH = Path("/cache")
 DATA_PATH = Path("/data")
 
-def formulate_output(requested_password, password_data):
-    output = render_template("index.html", field=FIELD, requested_password=requested_password, password_data=password_data)
-    return "\n".join((l.strip() for l in output.split("\n")))
+def html_response(requested_password, password_data):
+    return render_template("index.html", field=FIELD, requested_password=requested_password, password_data=password_data)
 
 def requested_password_to_cache_stem(requested_password):
     return hashlib.md5(requested_password.encode("utf-8")).hexdigest()
@@ -42,16 +41,16 @@ def data_or_none(password_directory, password_name):
 def home():
     requested_password = request.form[FIELD] if FIELD in request.form else None
     if requested_password is None:
-        return formulate_output(None, None)
+        return html_response(None, None)
 
     password_data = data_or_none(DATA_PATH, requested_password)
     if password_data is not None:
-        return formulate_output(requested_password, password_data)
+        return html_response(requested_password, password_data)
 
     requested_password_h = requested_password_to_cache_stem(requested_password)
     password_data = data_or_none(CACHE_PATH, requested_password_h)
     if password_data is not None:
-        return formulate_output(requested_password, password_data)
+        return html_response(requested_password, password_data)
 
     password_length = 6 + (int.from_bytes(requested_password_h.encode("utf-8")) % 12)
     password = requested_password_h[:password_length]
@@ -60,12 +59,12 @@ def home():
     p = Popen(["age", "-e", "-a", "-i", "/age/server-identity.age"], stdout=PIPE, stdin=PIPE, stderr=PIPE, text=True)
     stdout, stderr = p.communicate(input=password_entry)
     if stderr:
-        return formulate_output(requested_password, stderr)
+        return html_response(requested_password, stderr)
     password_data = stdout
     password_path = CACHE_PATH / f"{requested_password_h}.age"
     with open(password_path, "w") as foo:
         foo.write(password_data)
-    return formulate_output(requested_password, password_data)
+    return html_response(requested_password, password_data)
 
 
 def main():
