@@ -57,7 +57,7 @@ The `recipient.pub` file is used to generate fake encrypted content preventing a
 **Option 2: Running with python**
 
     pip install flask
-    python -m app/main -e age
+    python -m app.main -e age
 
 By default, the server runs on http://127.0.0.1:80 and expects AGE encryption.
 To use GPG, switch the `-e` argument to `gpg` either in the compose file or in your CLI.
