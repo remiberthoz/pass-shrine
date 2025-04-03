@@ -49,7 +49,13 @@ def output_if_in_dir(search_path, requested_password, requested_password_h):
         password_path = paths[idx]
         with open(password_path, "r") as foo:
             password_data = foo.read()
-        return formulate_output(requested_password, password_data)
+
+def data_or_none(password_directory, password_name):
+    password_path = password_directory / password_name
+    if password_path.exists():
+        with open(password_path, "r") as foo:
+            return foo.read()
+    return None
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -57,14 +63,14 @@ def home():
     if requested_password is None:
         return formulate_output(None, None)
 
-    output = output_if_in_dir(DATA_PATH, requested_password, None)
-    if output is not None:
-        return output
+    password_data = data_or_none(DATA_PATH, requested_password)
+    if password_data is not None:
+        return formulate_output(requested_password, password_data)
 
     requested_password_h = requested_password_to_cache_stem(requested_password)
-    output = output_if_in_dir(CACHE_PATH, requested_password, requested_password_h)
-    if output is not None:
-        return output
+    password_data = data_or_none(CACHE_PATH, requested_password_h)
+    if password_data is not None:
+        return formulate_output(requested_password, password_data)
 
     password_length = 6 + (int.from_bytes(requested_password_h.encode("utf-8")) % 12)
     password = requested_password_h[:password_length]
