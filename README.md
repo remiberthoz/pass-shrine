@@ -63,9 +63,17 @@ By default, the server runs on http://127.0.0.1:80.
 
 ### Querying a password
 
+**Option 1: In a web brower**
+
 1. Open the web interface.
 2. :mag: Enter the name of the password entry you want to retrieve.
 3. The server will return an AGE-encrypted file.
+
+**Option 2: With a POST request**
+
+    curl -X POST <server-url>/api -H "Content-Type: application/x-www-form-urlencoded" -d "requested_password=<pass-name>"
+
+**Option 1&2:**
 
 If the password exists, the file will decrypt correctly.
 If the password does not exist, decryption will fail (only you can test this).

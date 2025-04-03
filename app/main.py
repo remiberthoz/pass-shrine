@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, jsonify, make_response
 from pathlib import Path
 import hashlib
 from subprocess import Popen, PIPE, STDOUT
@@ -8,9 +8,6 @@ app = Flask(__name__, static_folder="static")
 FIELD = "requested_password"
 CACHE_PATH = Path("/cache")
 DATA_PATH = Path("/data")
-
-def html_response(requested_password, password_data):
-    return render_template("index.html", field=FIELD, requested_password=requested_password, password_data=password_data)
 
 def requested_password_to_cache_stem(requested_password):
     return hashlib.md5(requested_password.encode("utf-8")).hexdigest()
@@ -52,13 +49,25 @@ def query_or_generate_data(password_name):
 
     return password_data
 
+
+def process_request(req):
+    requested_password = req.form[FIELD] if FIELD in req.form else None
+    if requested_password is None:
+        return requested_password, "[no data]"
+    password_data = query_or_generate_data(requested_password)
+    return requested_password, password_data
+
+@app.route("/api", methods=["POST"])
+def api():
+    password_name, password_data = process_request(request)
+    response = make_response(password_data)
+    response.mimetype = "text/plain; charset=utf-8"
+    return response
+
 @app.route("/", methods=["GET", "POST"])
 def home():
-    requested_password = request.form[FIELD] if FIELD in request.form else None
-    if requested_password is None:
-        return html_response(None, None)
-    password_data = query_or_generate_data(requested_password)
-    return html_response(requested_password, password_data)
+    password_name, password_data = process_request(request)
+    return render_template("index.html", field=FIELD, requested_password=password_name, password_data=password_data)
 
 
 def main():
