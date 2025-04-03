@@ -84,7 +84,6 @@ Contributions and feedback are welcome! Feel free to open issues or submit pull 
 
 **To-do list:**
 
-- GPG support for pass users (implementation must use `--hidden-recipient`).
 - Simplification of the web server (Flask is used for now, but alternatives like a simple bash CGI could be explored).
 - Basic security measures (authentication, rate-limiting, cache size handling).
 
