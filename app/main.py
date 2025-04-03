@@ -27,10 +27,15 @@ def output_if_in_dir(search_path, requested_password, requested_password_h):
             password_data = foo.read()
 
 def data_or_none(password_directory, password_name):
-    password_path = password_directory / password_name
-    if password_path.exists():
-        with open(password_path, "r") as foo:
-            return foo.read()
+    # Same trick as: https://gist.github.com/kousu/bf5610187b608d79d415b1436091ab2d
+    sanitized_name = Path("/", password_name).resolve().relative_to("/")
+    password_path = Path(password_directory, sanitized_name)
+    for suffix in ["", ".gpg", ".age"]:
+        # Cannot use .with_suffix(suffix) because password_name will often be a domain name with TLD
+        p = password_path.with_name(password_path.name + suffix)
+        if p.exists():
+            with open(p, "r") as foo:
+                return foo.read()
     return None
 
 @app.route("/", methods=["GET", "POST"])
