@@ -1,7 +1,7 @@
-from flask import Flask, request, render_template, jsonify, make_response
+from flask import Flask, request, render_template, make_response
 from pathlib import Path
 import hashlib
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
 
 app = Flask(__name__, static_folder="static")
 
