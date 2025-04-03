@@ -25,7 +25,7 @@ def output_if_in_dir(search_path, requested_password, requested_password_h):
         with open(password_path, "r") as foo:
             password_data = foo.read()
 
-def data_or_none(password_directory, password_name):
+def query_data_in_directory(password_directory, password_name):
     # Same trick as: https://gist.github.com/kousu/bf5610187b608d79d415b1436091ab2d
     sanitized_name = Path("/", password_name).resolve().relative_to("/")
     password_path = Path(password_directory, sanitized_name)
@@ -37,20 +37,15 @@ def data_or_none(password_directory, password_name):
                 return foo.read()
     return None
 
-@app.route("/", methods=["GET", "POST"])
-def home():
-    requested_password = request.form[FIELD] if FIELD in request.form else None
-    if requested_password is None:
-        return html_response(None, None)
-
-    password_data = data_or_none(DATA_PATH, requested_password)
+def query_or_generate_data(password_name):
+    password_data = query_data_in_directory(DATA_PATH, password_name)
     if password_data is not None:
-        return html_response(requested_password, password_data)
+        return password_data
 
-    requested_password_h = requested_password_to_cache_stem(requested_password)
-    password_data = data_or_none(CACHE_PATH, requested_password_h)
+    requested_password_h = requested_password_to_cache_stem(password_name)
+    password_data = query_data_in_directory(CACHE_PATH, requested_password_h)
     if password_data is not None:
-        return html_response(requested_password, password_data)
+        return password_data
 
     password_length = 6 + (int.from_bytes(requested_password_h.encode("utf-8")) % 12)
     password = requested_password_h[:password_length]
@@ -59,11 +54,20 @@ def home():
     p = Popen(["age", "-e", "-a", "-i", "/age/server-identity.age"], stdout=PIPE, stdin=PIPE, stderr=PIPE, text=True)
     stdout, stderr = p.communicate(input=password_entry)
     if stderr:
-        return html_response(requested_password, stderr)
+        return None
     password_data = stdout
     password_path = CACHE_PATH / f"{requested_password_h}.age"
     with open(password_path, "w") as foo:
         foo.write(password_data)
+
+    return password_data
+
+@app.route("/", methods=["GET", "POST"])
+def home():
+    requested_password = request.form[FIELD] if FIELD in request.form else None
+    if requested_password is None:
+        return html_response(None, None)
+    password_data = query_or_generate_data(requested_password)
     return html_response(requested_password, password_data)
 
 
