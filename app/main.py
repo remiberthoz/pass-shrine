@@ -35,7 +35,7 @@ def query_or_generate_data(password_name):
     password = password_name_h[:password_length]
     password_entry = f"||not_in_passwordstore|| {password}\nlogin: alfonse@courrier.net\nurl: example.com"
 
-    p = Popen(["age", "-e", "-a", "-i", "/age/server-identity.age"], stdout=PIPE, stdin=PIPE, stderr=PIPE, text=True)
+    p = Popen(["age", "-e", "-a", "-R", "/key/recipient.pub"], stdout=PIPE, stdin=PIPE, stderr=PIPE, text=True)
     stdout, stderr = p.communicate(input=password_entry)
     if stderr:
         return None

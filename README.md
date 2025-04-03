@@ -42,11 +42,11 @@ Passive observers can still monitor queries, but presumably only entries that ar
 In addition to the `./app` directory (which contains the server code), pass-shrine requires three additional directories:
 
 - `./data` → Your password-store (can symlink to `~/.password-store` or `~/.passage/store`).
-- `./age` → Contains a file named `server-identity.age`, that you should generate with `age-keygen`.
+- `./key` → Contains a file named `recipient.pub`, containing a GPG or AGE public key.
 - `./cache` → Stores generated fake encrypted files to ensure consistent responses for non-existing entries.
 
-**Note on the identity file:**
-The `server-identity.age` identity file is used to generate fake encrypted content preventing attackers from determining whether an entry exists. This identity must *not* be the same as the identity used to encrypt real password entries: you do not have to share the public key with `pass-shrine`.
+**Note on the `recipient.pub` file:**
+The `recipient.pub` file is used to generate fake encrypted content preventing attackers from determining whether an entry exists. This key must *not* be the same as the key used to encrypt real password entries: you do not have to share the public key with `pass-shrine`.
 
 ### Running pass-shrine
 
@@ -85,7 +85,6 @@ Contributions and feedback are welcome! Feel free to open issues or submit pull 
 **To-do list:**
 
 - GPG support for pass users (implementation must use `--hidden-recipient`).
-- Better handling of `server-identity.age`, no private keys are required by the server.
 - Simplification of the web server (Flask is used for now, but alternatives like a simple bash CGI could be explored).
 - Basic security measures (authentication, rate-limiting, cache size handling).
 

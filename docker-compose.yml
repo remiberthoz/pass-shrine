@@ -5,6 +5,6 @@ services:
       - ./app:/app
       - ./cache:/cache
       - ./data:/data
-      - ./age:/age
+      - ./key:/key
     ports:
       - "80:80"
